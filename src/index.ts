@@ -291,18 +291,83 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             };
           }
 
+          // Fetch full text for top 3-5 results that don't have text
+          const topOpinionsToFetch = opinions
+            .slice(0, Math.min(5, opinions.length))
+            .filter((op) => !op.plain_text && !op.html);
+
+          // Fetch full opinions in parallel
+          const fetchedOpinions = await Promise.all(
+            topOpinionsToFetch.map((op) =>
+              usLegalAPI.courtListener.getOpinion(op.id).catch(() => null),
+            ),
+          );
+
+          // Create a map of fetched opinions
+          const fetchedMap = new Map(
+            fetchedOpinions
+              .filter((op) => op !== null)
+              .map((op) => [op!.id, op!]),
+          );
+
+          // Merge fetched full text into original opinions
+          const enhancedOpinions = opinions.map((op) => {
+            const fetched = fetchedMap.get(op.id);
+            if (fetched && (fetched.plain_text || fetched.html)) {
+              return {
+                ...op,
+                plain_text: op.plain_text || fetched.plain_text,
+                html: op.html || fetched.html,
+              };
+            }
+            return op;
+          });
+
+          // Format opinions with excerpts from the text
+          const formattedOpinions = enhancedOpinions.map((opinion, index) => {
+            let excerpt = "";
+
+            // Try to get text excerpt (first 1500 characters for better context)
+            if (opinion.plain_text) {
+              excerpt = opinion.plain_text.substring(0, 1500).trim();
+              if (opinion.plain_text.length > 1500) {
+                excerpt += "...";
+              }
+            } else if (opinion.html) {
+              // Strip HTML tags for a plain text excerpt
+              excerpt = opinion.html
+                .replace(/<[^>]*>/g, "")
+                .substring(0, 1500)
+                .trim();
+              if (opinion.html.replace(/<[^>]*>/g, "").length > 1500) {
+                excerpt += "...";
+              }
+            }
+
+            let result = `${index + 1}. **${opinion.case_name}${opinion.case_name_full ? ` (${opinion.case_name_full})` : ""}**\n`;
+            result += `   Court: ${opinion.court} | Date: ${opinion.date_filed}\n`;
+            if (opinion.citation) {
+              result += `   Citation: ${opinion.citation}\n`;
+            }
+            if (opinion.judges && opinion.judges.length > 0) {
+              result += `   Judges: ${opinion.judges.join(", ")}\n`;
+            }
+            result += `   Status: ${opinion.precedential_status}\n`;
+            if (excerpt) {
+              result += `   \n   **Excerpt from Opinion:**\n   ${excerpt}\n`;
+            } else {
+              result += `   \n   *Full text not available in search results. See link below for complete opinion.*\n`;
+            }
+            result += `   Full text: ${opinion.url}\n`;
+
+            return result;
+          });
+
           return {
             content: [
               {
                 type: "text",
-                text:
-                  `**Court Opinions Search Results for "${query}"**\n\nFound ${opinions.length} result(s)\n\n` +
-                  opinions
-                    .map(
-                      (opinion, index) =>
-                        `${index + 1}. **${opinion.case_name}**\n   Court: ${opinion.court} - ${opinion.date_filed}\n   ${opinion.precedential_status}\n   ${opinion.url}\n`,
-                    )
-                    .join("\n"),
+                text: `**Court Opinions Search Results for "${query}"**\n\nFound ${opinions.length} result(s)\n\n${formattedOpinions.join("\n\n")}`,
               },
             ],
           };
@@ -341,18 +406,78 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             };
           }
 
+          // Fetch full text for top results that don't have text
+          const topOpinionsToFetch = opinions
+            .slice(0, Math.min(5, opinions.length))
+            .filter((op) => !op.plain_text && !op.html);
+
+          const fetchedOpinions = await Promise.all(
+            topOpinionsToFetch.map((op) =>
+              usLegalAPI.courtListener.getOpinion(op.id).catch(() => null),
+            ),
+          );
+
+          const fetchedMap = new Map(
+            fetchedOpinions
+              .filter((op) => op !== null)
+              .map((op) => [op!.id, op!]),
+          );
+
+          const enhancedOpinions = opinions.map((op) => {
+            const fetched = fetchedMap.get(op.id);
+            if (fetched && (fetched.plain_text || fetched.html)) {
+              return {
+                ...op,
+                plain_text: op.plain_text || fetched.plain_text,
+                html: op.html || fetched.html,
+              };
+            }
+            return op;
+          });
+
+          // Format opinions with excerpts
+          const formattedOpinions = enhancedOpinions.map((opinion, index) => {
+            let excerpt = "";
+
+            if (opinion.plain_text) {
+              excerpt = opinion.plain_text.substring(0, 1500).trim();
+              if (opinion.plain_text.length > 1500) {
+                excerpt += "...";
+              }
+            } else if (opinion.html) {
+              excerpt = opinion.html
+                .replace(/<[^>]*>/g, "")
+                .substring(0, 1500)
+                .trim();
+              if (opinion.html.replace(/<[^>]*>/g, "").length > 1500) {
+                excerpt += "...";
+              }
+            }
+
+            let result = `${index + 1}. **${opinion.case_name}${opinion.case_name_full ? ` (${opinion.case_name_full})` : ""}**\n`;
+            result += `   Court: ${opinion.court} | Date: ${opinion.date_filed}\n`;
+            if (opinion.citation) {
+              result += `   Citation: ${opinion.citation}\n`;
+            }
+            if (opinion.judges && opinion.judges.length > 0) {
+              result += `   Judges: ${opinion.judges.join(", ")}\n`;
+            }
+            result += `   Status: ${opinion.precedential_status}\n`;
+            if (excerpt) {
+              result += `   \n   **Excerpt from Opinion:**\n   ${excerpt}\n`;
+            } else {
+              result += `   \n   *Full text not available. See link below for complete opinion.*\n`;
+            }
+            result += `   Full text: ${opinion.url}\n`;
+
+            return result;
+          });
+
           return {
             content: [
               {
                 type: "text",
-                text:
-                  `**Recent Court Opinions**\n\nFound ${opinions.length} result(s)\n\n` +
-                  opinions
-                    .map(
-                      (opinion, index) =>
-                        `${index + 1}. **${opinion.case_name}**\n   Court: ${opinion.court} - ${opinion.date_filed}\n   ${opinion.precedential_status}\n   ${opinion.url}\n`,
-                    )
-                    .join("\n"),
+                text: `**Recent Court Opinions**\n\nFound ${opinions.length} result(s)\n\n${formattedOpinions.join("\n\n")}`,
               },
             ],
           };
