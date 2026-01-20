@@ -1,13 +1,17 @@
 {
-  "name": "us-legal-mcp",
-  "version": "1.0.0",
+  "author": "Legal MCP Team",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "axios": "^1.6.0",
+    "express": "^5.2.1",
+    "zod": "^3.22.4"
+  },
   "description": "MCP server for US legal data - Congress, Federal Register, US Code, and more",
-  "type": "module",
-  "main": "dist/index.js",
-  "scripts": {
-    "build": "tsc",
-    "postinstall": "node scripts/postinstall.js",
-    "generate-cursor-link": "node scripts/generate-cursor-install-link.js"
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
   },
   "keywords": [
     "mcp",
@@ -18,16 +22,15 @@
     "us-code",
     "legislation"
   ],
-  "author": "Legal MCP Team",
   "license": "MIT",
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^0.5.0",
-    "axios": "^1.6.0",
-    "zod": "^3.22.4"
+  "main": "dist/index.js",
+  "name": "us-legal-mcp",
+  "scripts": {
+    "build": "tsc",
+    "generate-cursor-link": "node scripts/generate-cursor-install-link.js",
+    "postinstall": "node scripts/postinstall.js",
+    "start": "node dist/http.js"
   },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "tsx": "^4.0.0",
-    "typescript": "^5.0.0"
-  }
+  "type": "module",
+  "version": "1.0.0"
 }

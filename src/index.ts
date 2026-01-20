@@ -1,11 +1,8 @@
 #!/usr/bin/env node
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from "@modelcontextprotocol/sdk/types.js";
 import USLegalAPI from "./us-legal-apis.js";
+import { registerTools } from "./tool-handler.js";
 
 // Initialize US Legal API
 const apiKeys = {
