@@ -12,18 +12,23 @@ const usLegalAPI = new USLegalAPI({
 console.error("API Key Status:");
 console.error(`Congress.gov: ${process.env.CONGRESS_API_KEY ? "OK" : "MISSING"}`);
 console.error(`CourtListener: ${process.env.COURT_LISTENER_API_KEY ? "OK" : "MISSING"}`);
-app.get("/health", (_req, res) => {
-    res.status(200).json({ status: "ok" });
-});
-async function handleMcpSse(_req, res) {
-    const server = new Server({
-        name: "us-legal-mcp",
-        version: "1.0.0",
-    }, {
-        capabilities: {
-            tools: {},
+app.get("/", (_req, res) => {
+    res.status(200).json({
+        status: "ok",
+        service: "us-legal-mcp",
+        endpoints: {
+            health: "/health",
+            mcp: "/mcp",
+            sse: "/sse",
+            message: "/message",
         },
     });
+});
+app.get("/health", (_req, res) => {
+    res.status(200).json({ status: "ok", service: "us-legal-mcp" });
+});
+async function handleMcpSse(_req, res) {
+    const server = new Server({ name: "us-legal-mcp", version: "1.0.0" }, { capabilities: { tools: {} } });
     registerTools(server, usLegalAPI);
     const transport = new SSEServerTransport("/message", res);
     await server.connect(transport);
@@ -35,6 +40,7 @@ app.post("/message", (_req, res) => {
 });
 app.listen(PORT, () => {
     console.log(`US Legal MCP running on port ${PORT}`);
+    console.log(`Root: /`);
     console.log(`Health: /health`);
     console.log(`SSE: /sse`);
     console.log(`MCP: /mcp`);

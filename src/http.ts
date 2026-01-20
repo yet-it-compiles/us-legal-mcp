@@ -21,21 +21,27 @@ console.error(
   `CourtListener: ${process.env.COURT_LISTENER_API_KEY ? "OK" : "MISSING"}`,
 );
 
+app.get("/", (_req: Request, res: Response) => {
+  res.status(200).json({
+    status: "ok",
+    service: "us-legal-mcp",
+    endpoints: {
+      health: "/health",
+      mcp: "/mcp",
+      sse: "/sse",
+      message: "/message",
+    },
+  });
+});
+
 app.get("/health", (_req: Request, res: Response) => {
-  res.status(200).json({ status: "ok" });
+  res.status(200).json({ status: "ok", service: "us-legal-mcp" });
 });
 
 async function handleMcpSse(_req: Request, res: Response) {
   const server = new Server(
-    {
-      name: "us-legal-mcp",
-      version: "1.0.0",
-    },
-    {
-      capabilities: {
-        tools: {},
-      },
-    },
+    { name: "us-legal-mcp", version: "1.0.0" },
+    { capabilities: { tools: {} } },
   );
 
   registerTools(server, usLegalAPI);
@@ -53,6 +59,7 @@ app.post("/message", (_req: Request, res: Response) => {
 
 app.listen(PORT, () => {
   console.log(`US Legal MCP running on port ${PORT}`);
+  console.log(`Root: /`);
   console.log(`Health: /health`);
   console.log(`SSE: /sse`);
   console.log(`MCP: /mcp`);
