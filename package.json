@@ -28,8 +28,8 @@
   "scripts": {
     "build": "tsc",
     "generate-cursor-link": "node scripts/generate-cursor-install-link.js",
-    "postinstall": "node scripts/postinstall.js",
-    "start": "node dist/index.js"
+    "postinstall": "if [ \"$NODE_ENV\" != \"production\" ]; then node scripts/postinstall.js; fi",
+    "start": "node dist/http.js"
   },
   "type": "module",
   "version": "1.0.0"
