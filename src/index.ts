@@ -1,8 +1,11 @@
-#!/usr/bin/env node
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
+
 import USLegalAPI from "./us-legal-apis.js";
-import { registerTools } from "./tool-handler.js";
 
 // Initialize US Legal API
 const apiKeys = {
@@ -149,43 +152,45 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 `- Regulations: ${regulations.length}\n` +
                 `- Court Opinions: ${opinions.length}\n\n` +
                 `**Top Results:**\n\n` +
-                (bills.length > 0
-                  ? `**Congress Bills (${bills.length}):**\n` +
-                    bills
-                      .slice(0, 3)
-                      .map(
-                        (bill, index) =>
-                          `${index + 1}. **${bill.title}** (Bill)\n   ${bill.type} ${bill.number}\n   ${bill.url}\n`,
-                      )
-                      .join("\n") +
-                    "\n\n"
-                  : "") +
-                (regulations.length > 0
-                  ? `**Federal Register (${regulations.length}):**\n` +
-                    regulations
-                      .slice(0, 3)
-                      .map(
-                        (doc, index) =>
-                          `${index + 1}. **${doc.title}** (Regulation)\n   ${doc.document_number}\n   ${doc.html_url}\n`,
-                      )
-                      .join("\n") +
-                    "\n\n"
-                  : "") +
-                (opinions.length > 0
-                  ? `**Court Opinions (${opinions.length}):**\n` +
-                    opinions
-                      .slice(0, 3)
-                      .map(
-                        (opinion, index) =>
-                          `${index + 1}. **${opinion.case_name}** (Court Case)\n   ${opinion.court} - ${opinion.date_filed}\n   ${opinion.url}\n`,
-                      )
-                      .join("\n")
-                  : "") +
-                (bills.length === 0 &&
-                regulations.length === 0 &&
-                opinions.length === 0
-                  ? `No results found across available sources.`
-                  : ""),
+                (bills.length > 0 ?
+                  `**Congress Bills (${bills.length}):**\n` +
+                  bills
+                    .slice(0, 3)
+                    .map(
+                      (bill, index) =>
+                        `${index + 1}. **${bill.title}** (Bill)\n   ${bill.type} ${bill.number}\n   ${bill.url}\n`,
+                    )
+                    .join("\n") +
+                  "\n\n"
+                : "") +
+                (regulations.length > 0 ?
+                  `**Federal Register (${regulations.length}):**\n` +
+                  regulations
+                    .slice(0, 3)
+                    .map(
+                      (doc, index) =>
+                        `${index + 1}. **${doc.title}** (Regulation)\n   ${doc.document_number}\n   ${doc.html_url}\n`,
+                    )
+                    .join("\n") +
+                  "\n\n"
+                : "") +
+                (opinions.length > 0 ?
+                  `**Court Opinions (${opinions.length}):**\n` +
+                  opinions
+                    .slice(0, 3)
+                    .map(
+                      (opinion, index) =>
+                        `${index + 1}. **${opinion.case_name}** (Court Case)\n   ${opinion.court} - ${opinion.date_filed}\n   ${opinion.url}\n`,
+                    )
+                    .join("\n")
+                : "") +
+                ((
+                  bills.length === 0 &&
+                  regulations.length === 0 &&
+                  opinions.length === 0
+                ) ?
+                  `No results found across available sources.`
+                : ""),
             },
           ],
         };
